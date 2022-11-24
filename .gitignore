@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 
 BreaKHis_v1/
+results/
+*.pkl
