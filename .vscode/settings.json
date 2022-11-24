@@ -1,0 +1,5 @@
+{
+  "files.watcherExclude": {
+    "**/BreaKHis_v1/**": true
+  }
+}
