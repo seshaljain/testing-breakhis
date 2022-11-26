@@ -143,9 +143,10 @@ results = {
 # %%
 
 
-def run_clfs(mag, n_fold):
+def run_clfs(clf, mag, n_fold):
+    print("Classifier:", clf)
     print("Magnification:", mag)
-    print(f"Fold: {n_fold}")
+    print("Fold:", n_fold)
 
     df = dataset.copy()[dataset["magnification"] == mag]
     train_df = df.copy()[dataset[n_fold] == "train"]
@@ -172,21 +173,21 @@ def run_clfs(mag, n_fold):
     y_train_ = encoder.transform(y_train)
     y_test_ = encoder.transform(y_test)
 
-    # 1NN
-    results["knn"][mag] = {}
-    results["knn"][mag][n_fold] = knn_clf(x_train_, y_train_, x_test_, y_test_)
-    # SVM
-    results["svm"][mag] = {}
-    results["svm"][mag][n_fold] = svm_clf(x_train_, y_train_, x_test_, y_test_)
-    # Decision Tree
-    results["dt"][mag] = {}
-    results["dt"][mag][n_fold] = dt_clf(x_train_, y_train_, x_test_, y_test_)
+    results[clf][mag] = {}
+    if clf == "knn":
+        # 1NN
+        results[clf][mag][n_fold] = knn_clf(
+            x_train_, y_train_, x_test_, y_test_)
+    elif clf == "svm":
+        # SVM
+        results[clf][mag][n_fold] = svm_clf(
+            x_train_, y_train_, x_test_, y_test_)
+    elif clf == "dt":
+        # Decision Tree
+        results[clf][mag][n_fold] = dt_clf(
+            x_train_, y_train_, x_test_, y_test_)
 
-    print("Processed:", mag, n_fold)
+    print("Processed:", clf, mag, n_fold)
 
-    with open(f"results/{mag}_{n_fold}.pkl", 'wb') as f:
+    with open(f"results/{clf}_{mag}_{n_fold}.pkl", 'wb') as f:
         pickle.dump(results, f)
-
-
-# %%
-run_clfs("40X", "fold_1")
