@@ -161,4 +161,7 @@ cython_debug/
 
 BreaKHis_v1/
 results/
+
 *.pkl
+
+output.*

@@ -1,31 +1,20 @@
 # %%
-from tensorflow.keras.preprocessing.image import img_to_array, load_img
-from tensorflow.keras.models import load_model
-from tensorflow.keras.optimizers import SGD
+import sys
+from keras_preprocessing.image import img_to_array, load_img
 import tensorflow as tf
 import os
-import random
-import warnings
 import numpy as np
 import pandas as pd
 import seaborn as sn
-import csv
 import pickle
-
 from tqdm import tqdm
-from matplotlib import pyplot as plt
-
-
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-
-from sklearn.metrics import auc, classification_report, confusion_matrix, roc_curve
-
+from sklearn.metrics import classification_report
+import warnings
 warnings.filterwarnings('ignore')
-
 
 # %%
 # from google.colab import drive
@@ -45,7 +34,6 @@ sub_classes = {
     'malignant': ['ductal_carcinoma', 'lobular_carcinoma', 'mucinous_carcinoma', 'papillary_carcinoma']
 }
 n_folds = (1, 2, 3, 4, 5)
-
 
 # %%
 encoder = LabelEncoder()
@@ -107,7 +95,7 @@ dataset.head()
 # %%
 def knn_clf(x_train, y_train, x_test, y_test):
     k = 1
-    knn_clf = KNeighborsClassifier(n_neighbors=k)
+    knn_clf = KNeighborsClassifier(n_neighbors=k, n_jobs=8)
     knn_clf.fit(x_train, y_train)
 
     return classification_report(y_test, knn_clf.predict(x_test), output_dict=True)
@@ -126,25 +114,34 @@ def dt_clf(x_train, y_train, x_test, y_test):
 
     return classification_report(y_test, dt_clf.predict(x_test), output_dict=True)
 
-
 # %%
-image_size = (46, 70, 3)
+image_size = (460, 700, 3)
 
 # %%
 results = {
     "knn": {
+        "40X": {},
+        "100X": {},
+        "200X": {},
+        "400X": {}
     },
     "svm": {
+        "40X": {},
+        "100X": {},
+        "200X": {},
+        "400X": {}
     },
     "dt": {
+        "40X": {},
+        "100X": {},
+        "200X": {},
+        "400X": {}
     },
 }
 
 # %%
-
-
-def run_clfs(clf, mag, n_fold):
-    print("Classifier:", clf)
+def run_clfs(mag, n_fold):
+    r = results
     print("Magnification:", mag)
     print("Fold:", n_fold)
 
@@ -154,12 +151,12 @@ def run_clfs(clf, mag, n_fold):
 
     x_train, x_test, y_train, y_test = [], [], [], []
 
-    for i, row in tqdm(train_df.iterrows()):
+    for i, row in train_df.iterrows():
         image = load_img(row["path"], target_size=image_size)
         x_train.append(img_to_array(image) / 255.0)
         y_train.append(row["lesion"])
 
-    for i, row in tqdm(test_df.iterrows()):
+    for i, row in test_df.iterrows():
         image = load_img(row["path"], target_size=image_size)
         x_test.append(img_to_array(image) / 255.0)
         y_test.append(row["lesion"])
@@ -173,21 +170,21 @@ def run_clfs(clf, mag, n_fold):
     y_train_ = encoder.transform(y_train)
     y_test_ = encoder.transform(y_test)
 
-    results[clf][mag] = {}
-    if clf == "knn":
-        # 1NN
-        results[clf][mag][n_fold] = knn_clf(
+    r["knn"][mag][n_fold] = knn_clf(
+        x_train_, y_train_, x_test_, y_test_)
+    r["svm"][mag][n_fold] = svm_clf(
             x_train_, y_train_, x_test_, y_test_)
-    elif clf == "svm":
-        # SVM
-        results[clf][mag][n_fold] = svm_clf(
-            x_train_, y_train_, x_test_, y_test_)
-    elif clf == "dt":
-        # Decision Tree
-        results[clf][mag][n_fold] = dt_clf(
+    r["dt"][mag][n_fold] = dt_clf(
             x_train_, y_train_, x_test_, y_test_)
 
-    print("Processed:", clf, mag, n_fold)
+    print("Processed:", mag, n_fold)
 
-    with open(f"results/{clf}_{mag}_{n_fold}.pkl", 'wb') as f:
-        pickle.dump(results, f)
+    with open(f"results/{mag}_{n_fold}.pkl", 'wb') as f:
+        pickle.dump(r, f)
+
+# %%
+for mag in magnifications:
+    for fold in n_folds:
+        run_clfs(mag=mag, n_fold=f"fold_{fold}")
+
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N breakhis
+#PBS -l nodes=1:ppn=32
+#PBS -l ngpus=1
+#PBS -o output.out
+#PBS -e output.err
+
+module load apps/anaconda3
+cd /home/193112007/major_s
+source /opt/apps/anaconda3/bin/activate breakhis && python classifier.py
